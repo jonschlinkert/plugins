@@ -50,7 +50,7 @@ Plugins.prototype.use = function (fn) {
 /**
  * ## .run
  *
- * Run `str` against each function in the plugins.
+ * Run `str` against each function in the `plugins` stack.
  *
  * ```js
  * plugins.run(str, opts)
