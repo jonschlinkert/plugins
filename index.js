@@ -60,7 +60,7 @@ Plugins.prototype.use = function (fn) {
  */
 
 Plugins.prototype.run = function () {
-	var args = [].slice.call(arguments);
+  var args = [].slice.call(arguments);
   return this.plugins.reduce(function(value, fn) {
     return fn(value, args.slice(1));
   }, args[0]);
