@@ -30,8 +30,10 @@ plugins
   .use(baz({}))
 ```
 
+**Params:**
+
 * `fn` {Function}: Plugin function to add to the `plugins` stack.  
-* `return`{Plugins} for chaining. 
+* `return`{Plugins}  for chaining. 
 
 
 ### .run
@@ -42,7 +44,7 @@ Call each function in the `plugins` stack to iterate over `arguments`.
 plugins.run( arguments[0], [arguments...] )
 ```
 
-* The {Array|Object|String}: value to iterate over.
+* `arguments` {Array|Object|String}: The value to iterate over.
 
 
 ## Creating plugins
@@ -52,11 +54,26 @@ A plugin takes an `options` object and returns a function that takes a string as
 **Example:**
 
 ```js
-function myPlugin(options) {
+function src() {
+  return function(filepath) {
+    return fs.readFileSync(filepath);
+  }
+}
+function dest(filepath) {
+  return function(str) {
+    return fs.writeFileSync(filepath, str);
+  }
+}
+function upper() {
   return function (str) {
     return str.toUpperCase();
   }
 }
+
+plugins
+  .use(src('foo.txt'))
+  .use(upper())
+  .use(dest('dist/foo.txt'))
 ```
 
 ## Author

@@ -35,8 +35,10 @@ function Plugins() {
  *   .use(baz({}))
  * ```
  *
+ * **Params:**
+ *
  * @param {Function} `fn` Plugin function to add to the `plugins` stack.
- * @return {Plugins} for chaining.
+ * @return {Plugins}  for chaining.
  * @api public
  */
 
@@ -55,7 +57,7 @@ Plugins.prototype.use = function (fn) {
  * plugins.run( arguments[0], [arguments...] )
  * ```
  *
- * @param {Array|Object|String} The value to iterate over.
+ * @param {Array|Object|String} `arguments` The value to iterate over.
  * @api public
  */
 
