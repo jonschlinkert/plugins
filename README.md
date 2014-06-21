@@ -49,13 +49,21 @@ plugins.run( arguments[0], [arguments...] )
 
 ## Creating plugins
 
-A plugin takes an `options` object and returns a function that takes a string as a parameter.
+A plugin takes an `options` object and returns a function that takes any arguments as parameters.
+
+```js
+function myPlugin(options) {
+  return function(str) {
+    // do something to `str`
+  }
+}
+```
 
 **Example:**
 
 ```js
-function src() {
-  return function(filepath) {
+function src(filepath) {
+  return function() {
     return fs.readFileSync(filepath);
   }
 }
@@ -73,7 +81,9 @@ function upper() {
 plugins
   .use(src('foo.txt'))
   .use(upper())
-  .use(dest('dist/foo.txt'))
+  .use(dest('dist/foo.txt'));
+
+plugins.run();
 ```
 
 ## Author

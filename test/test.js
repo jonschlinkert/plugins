@@ -95,7 +95,7 @@ describe('when a plugin is passed a file path:', function () {
     var plugins = new Plugins();
 
     var src = function (filepath, options) {
-      return function(str, globals) {
+      return function() {
         return options.prepend + file.readFileSync(filepath);
       };
     };
