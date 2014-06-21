@@ -42,7 +42,7 @@ function Plugins() {
  */
 
 Plugins.prototype.use = function (fn) {
-  this.plugins.push(fn.bind(this));
+  this.plugins.push(fn);
   return this;
 };
 
@@ -64,10 +64,7 @@ Plugins.prototype.use = function (fn) {
 
 Plugins.prototype.run = function (str, opts) {
   return this.plugins.reduce(function(content, fn) {
-    if (typeof fn(content) !== 'function') {
-      return fn(content, opts);
-    }
-    return fn(opts)(content);
+    return fn(content);
   }, str);
 };
 

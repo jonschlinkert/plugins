@@ -9,6 +9,7 @@ var file = require('fs-utils');
 var expect = require('chai').expect;
 var Plugins = require('../');
 
+
 function fixture(filename) {
   return file.readFileSync('test/fixtures/' + filename);
 }
@@ -24,29 +25,21 @@ describe('plugins.run():', function () {
       var plugins = new Plugins();
 
       plugins
-        .use(function (options) {
-          return function(str) {
-            var re = /[\r\n]/;
-            return str.split(re).map(function (line, i) {
-              return '\naaa' + line + 'bbb';
-            }).join('');
-          }
+        .use(function(str) {
+          var re = /[\r\n]/;
+          return str.split(re).map(function (line, i) {
+            return '\naaa' + line + 'bbb';
+          }).join('');
         })
-
-        .use(function (options) {
-          return function(str) {
-            return str + 'ccc';
-          }
+        .use(function(str) {
+          return str + 'ccc';
         })
-
-        .use(function (options) {
-          return function(str) {
-            return str + 'ddd';
-          }
+        .use(function(str) {
+          return str + 'ddd';
         });
 
       var str = plugins.run(fixture('LICENSE-MIT'));
-      var test = /cccddd$/.test(str);
+      var test = /bbbcccddd$/.test(str);
       expect(test).to.equal(true);
     });
   });
@@ -71,6 +64,7 @@ describe('when a plugin is passed:', function () {
   });
 });
 
+
 describe('when a plugin is passed with options:', function () {
   it('should run the function and return the result.', function () {
     var plugins = new Plugins();
@@ -90,6 +84,7 @@ describe('when a plugin is passed with options:', function () {
     expect(/Stardate/.test(str)).to.equal(true);
   });
 });
+
 
 describe('when a plugin is passed a file path:', function () {
   it('should read the file with the first plugin, then run the string through the rest of the stack.', function () {
@@ -120,6 +115,6 @@ describe('when a plugin is passed a file path:', function () {
 
     plugins.run({global: 'options'}, {c: 'd'});
     expect(file.exists('test/actual/footer.md')).to.equal(true);
-    // file.delete('test/actual/footer.md');
+    file.delete('test/actual/footer.md');
   });
 });
