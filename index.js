@@ -36,8 +36,7 @@ function Plugins() {
  * ```
  *
  * @param {Function} `fn` Plugin function to add to the `plugins` stack.
- * @param {Options} `options` Options to pass to `fn`.
- * @return {this} for chaining.
+ * @return {Plugins} for chaining.
  * @api public
  */
 
@@ -50,22 +49,21 @@ Plugins.prototype.use = function (fn) {
 /**
  * ## .run
  *
- * Run `str` against each function in the `plugins` stack.
+ * Call each function in the `plugins` stack to iterate over `arguments`.
  *
  * ```js
- * plugins.run(str, opts)
+ * plugins.run( arguments[0], [arguments...] )
  * ```
  *
- * @param {String} `str` The string to transform.
- * @param {String} `opts` Options to pass to all plugins in the stack.
- * @return {String} transformed string.
+ * @param {Array|Object|String} The value to iterate over.
  * @api public
  */
 
-Plugins.prototype.run = function (str, opts) {
-  return this.plugins.reduce(function(content, fn) {
-    return fn(content);
-  }, str);
+Plugins.prototype.run = function () {
+	var args = [].slice.call(arguments);
+  return this.plugins.reduce(function(value, fn) {
+    return fn(value, args.slice(1));
+  }, args[0]);
 };
 
 

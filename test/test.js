@@ -24,13 +24,17 @@ describe('plugins.run():', function () {
     it('should run the string through each plugin in the stack.', function () {
       var plugins = new Plugins();
 
-      plugins
-        .use(function(str) {
+      var foo = function(options) {
+      	return function(str) {
           var re = /[\r\n]/;
           return str.split(re).map(function (line, i) {
             return '\naaa' + line + 'bbb';
           }).join('');
-        })
+        };
+      };
+
+      plugins
+        .use(foo())
         .use(function(str) {
           return str + 'ccc';
         })
@@ -113,7 +117,7 @@ describe('when a plugin is passed a file path:', function () {
       .use(append('footer.', {footer: 'opts'}), {a: 'b'})
       .use(dest('footer.md'));
 
-    plugins.run({global: 'options'}, {c: 'd'});
+    plugins.run({global: 'options'}, {c: 'd'}, {e: 'f'});
     expect(file.exists('test/actual/footer.md')).to.equal(true);
     file.delete('test/actual/footer.md');
   });
