@@ -6,8 +6,8 @@
  */
 
 var file = require('fs-utils');
-var expect = require('chai').expect;
-var Plugins = require('../');
+var should = require('should');
+var Plugins = require('..');
 
 
 function fixture(filename) {
@@ -44,9 +44,7 @@ describe('plugins.run():', function () {
         });
 
       var str = plugins.run(fixture('LICENSE-MIT'));
-      var test = /bbbcccddd$/.test(str);
-      console.log(test)
-      // expect(test).to.equal(true);
+      /bbbcccddd$/.test(str).should.equal(true);
     });
   });
 
@@ -73,9 +71,7 @@ describe('plugins.run():', function () {
         });
 
       plugins.run(fixture('LICENSE-MIT'), function (err, str) {
-        var test = /bbbcccddd$/.test(str);
-        console.log(test)
-        // expect(test).to.equal(true);
+        /bbbcccddd$/.test(str).should.equal(true);
         done();
       });
     });
@@ -87,77 +83,74 @@ describe('plugins.run():', function () {
 
 
 
-// describe('when a plugin is passed:', function () {
-//   it('should run the function and return the result.', function () {
-//     var plugins = new Plugins();
+describe('when a plugin is passed:', function () {
+  it('should run the function and return the result.', function () {
+    var plugins = new Plugins();
 
-//     var src = function (options) {
+    var src = function (options) {
+      return function(filepath) {
+        return fixture(filepath);
+      }
+    };
 
-//       return function(filepath) {
-//     console.log(filepath)
-//         return fixture(filepath);
-//       }
-//     };
+    plugins.use(src());
+    var str = plugins.run('LICENSE-MIT');
 
-//     plugins.use(src());
-
-//     var str = plugins.run('LICENSE-MIT');
-//     // Test the date in the license
-//     expect(new RegExp((new Date).getUTCFullYear()).test(str)).to.equal(true);
-//   });
-// });
+    // Test the date in the license
+    new RegExp((new Date).getUTCFullYear()).test(str).should.be.true;
+  });
+});
 
 
-// describe('when a plugin is passed with options:', function () {
-//   it('should run the function and return the result.', function () {
-//     var plugins = new Plugins();
+describe('when a plugin is passed with options:', function () {
+  it('should run the function and return the result.', function () {
+    var plugins = new Plugins();
 
-//     var src = function (options) {
-//       return function(filepath) {
-//         var year = new RegExp((new Date).getUTCFullYear());
-//         var str = fixture(filepath);
-//         return str.replace(year, options.year || '');
-//       }
-//     };
+    var src = function (options) {
+      return function(filepath) {
+        var year = new RegExp((new Date).getUTCFullYear());
+        var str = fixture(filepath);
+        return str.replace(year, options.year || '');
+      }
+    };
 
-//     plugins.use(src({year: 'Stardate 3000'}))
+    plugins.use(src({year: 'Stardate 3000'}))
 
-//     var str = plugins.run('LICENSE-MIT');
-//     // Test the custom string in the license
-//     expect(/Stardate/.test(str)).to.equal(true);
-//   });
-// });
+    var str = plugins.run('LICENSE-MIT');
+    /Stardate/.test(str).should.be.true;
+  });
+});
 
 
-// describe('when a plugin is passed a file path:', function () {
-//   it('should read the file with the first plugin, then run the string through the rest of the stack.', function () {
-//     var plugins = new Plugins();
+describe('when a plugin is passed a file path:', function () {
+  it('should read the file with the first plugin, then run the string through the rest of the stack.', function () {
+    var plugins = new Plugins();
 
-//     var src = function (filepath, options) {
-//       return function() {
-//         return options.prepend + file.readFileSync(filepath);
-//       };
-//     };
+    var src = function (filepath, options) {
+      return function() {
+        return options.prepend + file.readFileSync(filepath);
+      };
+    };
 
-//     var append = function (footer) {
-//       return function(str) {
-//         return str + footer;
-//       };
-//     };
+    var append = function (footer) {
+      return function(str) {
+        return str + footer;
+      };
+    };
 
-//     var dest = function (filepath) {
-//       return function(str) {
-//         return actual(filepath, str);
-//       };
-//     };
+    var dest = function (filepath) {
+      return function(str) {
+        return actual(filepath, str);
+      };
+    };
 
-//     plugins
-//       .use(src('LICENSE-MIT', {prepend: 'banner'}), {local: 'options'})
-//       .use(append('footer.', {footer: 'opts'}), {a: 'b'})
-//       .use(dest('footer.md'));
+    plugins
+      .use(src('LICENSE-MIT', {prepend: 'banner'}), {local: 'options'})
+      .use(append('footer.', {footer: 'opts'}), {a: 'b'})
+      .use(dest('footer.md'));
 
-//     plugins.run({global: 'options'}, {c: 'd'}, {e: 'f'});
-//     expect(file.exists('test/actual/footer.md')).to.equal(true);
-//     file.delete('test/actual/footer.md');
-//   });
-// });
+    plugins.run({global: 'options'}, {c: 'd'}, {e: 'f'});
+    file.exists('test/actual/footer.md').should.be.true;
+    file.delete('test/actual/footer.md');
+  });
+});

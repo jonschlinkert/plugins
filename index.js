@@ -8,6 +8,7 @@
 'use strict';
 
 var arrayify = require('arrayify-compact');
+var chalk = require('chalk');
 
 
 /**
@@ -46,7 +47,7 @@ function Plugins() {
 Plugins.prototype.use = function (fn) {
   fn = arrayify(fn).filter(function(plugin) {
     if (typeof plugin !== 'function') {
-      throw new TypeError('plugin() exception', plugin);
+      throw new TypeError('plugin() exception', chalk.magenta(plugin));
     }
     return true;
   }.bind(this));
@@ -73,40 +74,40 @@ Plugins.prototype.run = function () {
   var cb = args[len - 1];
 
   var self = this;
-  var idx = 0, total = this.plugins.length;
+  var i = 0, total = this.plugins.length;
 
   function next(err, results) {
     if (err) {
+      err.message = chalk.red(err.message)
       throw new Error('plugin() exception', err);
     }
+
     args[0] = results;
-    if(idx < total) {
-      this.plugins[idx++].apply(self, args.concat(next.bind(this)));
+
+    if(i < total) {
+      this.plugins[i++].apply(self, args.concat(next.bind(this)));
     } else {
       cb.apply(null, arguments);
     }
   }
 
-  // do async
+  // async handling
   if (typeof cb === 'function') {
-
     args.pop();
-    this.plugins[idx++].apply(self, args.concat(next.bind(this)));
-
+    this.plugins[i++].apply(self, args.concat(next.bind(this)));
   } else {
 
     var results = args.shift();
-    for (idx = 0; idx < total; idx++) {
+    for (; i < total; i++) {
       try {
-        results = this.plugins[idx].apply(this, [results].concat(args));
+        results = this.plugins[i].apply(this, [results].concat(args));
       } catch (err) {
+        err.message = console.log(chalk.red(err.message));
         throw new Error('plugin() exception', err);
       }
     }
     return results;
-
   }
-
 };
 
 
