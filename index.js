@@ -44,8 +44,6 @@ function Plugins() {
  */
 
 Plugins.prototype.use = function (fn) {
-  var plugins = this.plugins || [];
-
   fn = arrayify(fn).filter(function(plugin) {
     if (typeof plugin !== 'function') {
       throw new TypeError('plugin() exception', plugin);
@@ -53,7 +51,7 @@ Plugins.prototype.use = function (fn) {
     return true;
   }.bind(this));
 
-  this.plugins = arrayify(this.plugins.concat(fn));
+  this.plugins = this.plugins.concat(fn);
   return this;
 };
 
@@ -71,11 +69,17 @@ Plugins.prototype.use = function (fn) {
 
 Plugins.prototype.run = function () {
   var args = [].slice.call(arguments);
+  var len = args.length;
+  var cb = args[len - 1];
 
   if (this.plugins.length) {
     this.plugins.forEach(function (plugin) {
       try {
-        return plugin.apply(this, args);
+        if (typeof cb === 'function') {
+          cb(plugin.apply(this, args));
+        } else {
+          return plugin.apply(this, args);
+        }
       } catch (err) {
         throw new Error('plugin() exception', err);
       }
