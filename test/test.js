@@ -6,8 +6,8 @@
  */
 
 var file = require('fs-utils');
-var expect = require('chai').expect;
-var Plugins = require('../');
+var should = require('should');
+var Plugins = require('..');
 
 
 function fixture(filename) {
@@ -20,12 +20,13 @@ function actual(filename, content) {
 
 
 describe('plugins.run():', function () {
+
   describe('when a string is passed to plugins.run():', function () {
     it('should run the string through each plugin in the stack.', function () {
       var plugins = new Plugins();
 
       var foo = function(options) {
-      	return function(str) {
+        return function(str) {
           var re = /[\r\n]/;
           return str.split(re).map(function (line, i) {
             return '\naaa' + line + 'bbb';
@@ -34,20 +35,52 @@ describe('plugins.run():', function () {
       };
 
       plugins
-        .use(foo())
-        .use(function(str) {
+        .use(foo({a: 'b'}))
+        .use(function (str) {
           return str + 'ccc';
         })
-        .use(function(str) {
+        .use(function (str) {
           return str + 'ddd';
         });
 
       var str = plugins.run(fixture('LICENSE-MIT'));
-      var test = /bbbcccddd$/.test(str);
-      expect(test).to.equal(true);
+      /bbbcccddd$/.test(str).should.equal(true);
     });
   });
+
+  describe('when a string and callback is passed to plugins.run():', function () {
+    it('should run the string through each plugin in the stack.', function (done) {
+      var plugins = new Plugins();
+
+      var foo = function(options) {
+        return function(str, next) {
+          var re = /[\r\n]/;
+          next(null, str.split(re).map(function (line, i) {
+            return '\naaa' + line + 'bbb';
+          }).join(''));
+        };
+      };
+
+      plugins
+        .use(foo({a: 'b'}))
+        .use(function (str, next) {
+          next(null, str + 'ccc');
+        })
+        .use(function (str, next) {
+          next(null, str + 'ddd');
+        });
+
+      plugins.run(fixture('LICENSE-MIT'), function (err, str) {
+        /bbbcccddd$/.test(str).should.equal(true);
+        done();
+      });
+    });
+  });
+
+
 });
+
+
 
 
 describe('when a plugin is passed:', function () {
@@ -61,10 +94,10 @@ describe('when a plugin is passed:', function () {
     };
 
     plugins.use(src());
-
     var str = plugins.run('LICENSE-MIT');
+
     // Test the date in the license
-    expect(new RegExp((new Date).getUTCFullYear()).test(str)).to.equal(true);
+    new RegExp((new Date).getUTCFullYear()).test(str).should.be.true;
   });
 });
 
@@ -84,8 +117,7 @@ describe('when a plugin is passed with options:', function () {
     plugins.use(src({year: 'Stardate 3000'}))
 
     var str = plugins.run('LICENSE-MIT');
-    // Test the custom string in the license
-    expect(/Stardate/.test(str)).to.equal(true);
+    /Stardate/.test(str).should.be.true;
   });
 });
 
@@ -118,7 +150,7 @@ describe('when a plugin is passed a file path:', function () {
       .use(dest('footer.md'));
 
     plugins.run({global: 'options'}, {c: 'd'}, {e: 'f'});
-    expect(file.exists('test/actual/footer.md')).to.equal(true);
+    file.exists('test/actual/footer.md').should.be.true;
     file.delete('test/actual/footer.md');
   });
 });

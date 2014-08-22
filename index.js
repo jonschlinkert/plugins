@@ -7,11 +7,15 @@
 
 'use strict';
 
+var arrayify = require('arrayify-compact');
+var chalk = require('chalk');
+
 
 /**
  * Initialize `Plugins`
  *
  * ```js
+ * var Plugins = require('plugins');
  * var plugins = new Plugins();
  * ```
  * @constructor
@@ -20,12 +24,10 @@
 
 function Plugins() {
   this.plugins = [];
-};
+}
 
 
 /**
- * ## .use
- *
  * Add a plugin `fn` to the plugins.
  *
  * ```js
@@ -43,18 +45,23 @@ function Plugins() {
  */
 
 Plugins.prototype.use = function (fn) {
-  this.plugins.push(fn);
+  fn = arrayify(fn).filter(function(plugin) {
+    if (typeof plugin !== 'function') {
+      throw new TypeError('plugin() exception', chalk.magenta(plugin));
+    }
+    return true;
+  }.bind(this));
+
+  this.plugins = this.plugins.concat(fn);
   return this;
 };
 
 
 /**
- * ## .run
- *
  * Call each function in the `plugins` stack to iterate over `arguments`.
  *
  * ```js
- * plugins.run( arguments[0], [arguments...] )
+ * plugins.run( arguments )
  * ```
  *
  * @param {Array|Object|String} `arguments` The value to iterate over.
@@ -63,12 +70,51 @@ Plugins.prototype.use = function (fn) {
 
 Plugins.prototype.run = function () {
   var args = [].slice.call(arguments);
-  return this.plugins.reduce(function(value, fn) {
-    return fn(value, args.slice(1));
-  }, args[0]);
+  var len = args.length;
+  var cb = args[len - 1];
+
+  var self = this;
+  var i = 0, total = this.plugins.length;
+
+  function next(err, results) {
+    if (err) {
+      err.message = chalk.red(err.message)
+      throw new Error('plugin() exception', err);
+    }
+
+    args[0] = results;
+
+    if(i < total) {
+      this.plugins[i++].apply(self, args.concat(next.bind(this)));
+    } else {
+      cb.apply(null, arguments);
+    }
+  }
+
+  // async handling
+  if (typeof cb === 'function') {
+    args.pop();
+    this.plugins[i++].apply(self, args.concat(next.bind(this)));
+  } else {
+
+    var results = args.shift();
+    for (; i < total; i++) {
+      try {
+        results = this.plugins[i].apply(this, [results].concat(args));
+      } catch (err) {
+        err.message = console.log(chalk.red(err.message));
+        throw new Error('plugin() exception', err);
+      }
+    }
+    return results;
+  }
 };
 
 
+/**
+ * Export `Plugins`
+ *
+ * @type {Object}
+ */
 
-// Export `Plugins`
 module.exports = Plugins;

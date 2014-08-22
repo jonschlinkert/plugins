@@ -1,7 +1,7 @@
 {
   "name": "plugins",
   "description": "Run a string through a plugin stack.",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "homepage": "https://github.com/jonschlinkert/plugins",
   "author": {
     "name": "Jon Schlinkert",
@@ -21,13 +21,15 @@
     }
   ],
   "keywords": [
-    "docs",
-    "documentation",
-    "generate",
-    "generator",
-    "markdown",
-    "templates",
-    "verb"
+    "extension",
+    "extensions",
+    "helper",
+    "helpers",
+    "middleware",
+    "plugin",
+    "fn",
+    "fns",
+    "plugins"
   ],
   "main": "index.js",
   "engines": {
@@ -40,7 +42,12 @@
     "chai": "^1.9.1",
     "fs-utils": "^0.4.3",
     "mocha": "*",
+    "should": "^4.0.4",
     "verb": "~0.2.6",
     "verb-tag-jscomments": "^0.1.2"
+  },
+  "dependencies": {
+    "arrayify-compact": "^0.1.0",
+    "chalk": "^0.5.1"
   }
 }
