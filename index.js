@@ -72,19 +72,41 @@ Plugins.prototype.run = function () {
   var len = args.length;
   var cb = args[len - 1];
 
-  if (this.plugins.length) {
-    this.plugins.forEach(function (plugin) {
+  var self = this;
+  var idx = 0, total = this.plugins.length;
+
+  function next(err, results) {
+    if (err) {
+      throw new Error('plugin() exception', err);
+    }
+    args[0] = results;
+    if(idx < total) {
+      this.plugins[idx++].apply(self, args.concat(next.bind(this)));
+    } else {
+      cb.apply(null, arguments);
+    }
+  }
+
+  // do async
+  if (typeof cb === 'function') {
+
+    args.pop();
+    this.plugins[idx++].apply(self, args.concat(next.bind(this)));
+
+  } else {
+
+    var results = args.shift();
+    for (idx = 0; idx < total; idx++) {
       try {
-        if (typeof cb === 'function') {
-          cb(plugin.apply(this, args));
-        } else {
-          return plugin.apply(this, args);
-        }
+        results = this.plugins[idx].apply(this, [results].concat(args));
       } catch (err) {
         throw new Error('plugin() exception', err);
       }
-    }.bind(this));
+    }
+    return results;
+
   }
+
 };
 
 

@@ -20,6 +20,7 @@ function actual(filename, content) {
 
 
 describe('plugins.run():', function () {
+
   describe('when a string is passed to plugins.run():', function () {
     it('should run the string through each plugin in the stack.', function () {
       var plugins = new Plugins();
@@ -48,7 +49,42 @@ describe('plugins.run():', function () {
       // expect(test).to.equal(true);
     });
   });
+
+  describe('when a string and callback is passed to plugins.run():', function () {
+    it('should run the string through each plugin in the stack.', function (done) {
+      var plugins = new Plugins();
+
+      var foo = function(options) {
+        return function(str, next) {
+          var re = /[\r\n]/;
+          next(null, str.split(re).map(function (line, i) {
+            return '\naaa' + line + 'bbb';
+          }).join(''));
+        };
+      };
+
+      plugins
+        .use(foo({a: 'b'}))
+        .use(function (str, next) {
+          next(null, str + 'ccc');
+        })
+        .use(function (str, next) {
+          next(null, str + 'ddd');
+        });
+
+      plugins.run(fixture('LICENSE-MIT'), function (err, str) {
+        var test = /bbbcccddd$/.test(str);
+        console.log(test)
+        // expect(test).to.equal(true);
+        done();
+      });
+    });
+  });
+
+
 });
+
+
 
 
 // describe('when a plugin is passed:', function () {
