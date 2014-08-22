@@ -1,7 +1,7 @@
 {
   "name": "plugins",
   "description": "Run a string through a plugin stack.",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "homepage": "https://github.com/jonschlinkert/plugins",
   "author": {
     "name": "Jon Schlinkert",
@@ -42,5 +42,8 @@
     "mocha": "*",
     "verb": "~0.2.6",
     "verb-tag-jscomments": "^0.1.2"
+  },
+  "dependencies": {
+    "arrayify-compact": "^0.1.0"
   }
 }

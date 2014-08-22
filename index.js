@@ -7,11 +7,14 @@
 
 'use strict';
 
+var arrayify = require('arrayify-compact');
+
 
 /**
  * Initialize `Plugins`
  *
  * ```js
+ * var Plugins = require('plugins');
  * var plugins = new Plugins();
  * ```
  * @constructor
@@ -20,12 +23,10 @@
 
 function Plugins() {
   this.plugins = [];
-};
+}
 
 
 /**
- * ## .use
- *
  * Add a plugin `fn` to the plugins.
  *
  * ```js
@@ -43,18 +44,25 @@ function Plugins() {
  */
 
 Plugins.prototype.use = function (fn) {
-  this.plugins.push(fn);
+  var plugins = this.plugins || [];
+
+  fn = arrayify(fn).filter(function(plugin) {
+    if (typeof plugin !== 'function') {
+      throw new TypeError('plugin() exception', plugin);
+    }
+    return true;
+  }.bind(this));
+
+  this.plugins = arrayify(this.plugins.concat(fn));
   return this;
 };
 
 
 /**
- * ## .run
- *
  * Call each function in the `plugins` stack to iterate over `arguments`.
  *
  * ```js
- * plugins.run( arguments[0], [arguments...] )
+ * plugins.run( arguments )
  * ```
  *
  * @param {Array|Object|String} `arguments` The value to iterate over.
@@ -63,12 +71,23 @@ Plugins.prototype.use = function (fn) {
 
 Plugins.prototype.run = function () {
   var args = [].slice.call(arguments);
-  return this.plugins.reduce(function(value, fn) {
-    return fn(value, args.slice(1));
-  }, args[0]);
+
+  if (this.plugins.length) {
+    this.plugins.forEach(function (plugin) {
+      try {
+        return plugin.apply(this, args);
+      } catch (err) {
+        throw new Error('plugin() exception', err);
+      }
+    }.bind(this));
+  }
 };
 
 
+/**
+ * Export `Plugins`
+ *
+ * @type {Object}
+ */
 
-// Export `Plugins`
 module.exports = Plugins;
