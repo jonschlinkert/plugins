@@ -19,10 +19,209 @@ function actual(filename, content) {
 }
 
 
-describe('plugins.run():', function () {
+describe('plugins:', function () {
+  it('should run a plugin and return the result:', function () {
+    var plugins = new Plugins();
+
+    plugins.use(function(val) {
+      return 'abc-' + val;
+    });
+
+    plugins.run('xyz').should.equal('abc-xyz')
+  });
+
+
+  it('should run a plugin with options:', function () {
+    var plugins = new Plugins();
+
+    var abc = function (opts) {
+      return function(val) {
+        return 'abc' + opts + val;
+      }
+    };
+
+    plugins.use(abc('|'));
+    plugins.run('xyz').should.equal('abc|xyz')
+  });
+
+
+  it('should run a stack of plugins passed directly to `.run()`:', function () {
+    var plugins = new Plugins();
+
+    var a = function(val) {
+      return val + 'a';
+    };
+    var b = function(val) {
+      return val + 'b';
+    };
+    var c = function(val) {
+      return val + 'c';
+    };
+
+    plugins.run('alphabet-', [a, b, c]).should.equal('alphabet-abc')
+  });
+});
+
+
+describe('plugins.run() async:', function () {
+  it('should run all of the plugins in a stack on an object:', function (done) {
+    var plugins = new Plugins();
+
+    plugins
+      .use(function (val, next) {
+        val.a = val.a || 'a'
+        next(null, val);
+      })
+      .use(function (val, next) {
+        val.a = val.a + 'b'
+        next(null, val);
+      })
+      .use(function (val, next) {
+        val.a = val.a + 'c'
+        next(null, val);
+      });
+
+    plugins.run({a: ''}, function (err, val) {
+      val.should.eql({a: 'abc'});
+      done();
+    });
+  });
+
+  it('should run all of the plugins in a stack on a string:', function (done) {
+    var plugins = new Plugins();
+    plugins
+      .use(function (a, next) {
+        next(null, a + 'a');
+      })
+      .use(function (a, next) {
+        next(null, a + 'b');
+      })
+      .use(function (a, next) {
+        next(null, a + 'c');
+      });
+
+    plugins.run('alphabet-', function (err, str) {
+      str.should.eql('alphabet-abc');
+      done();
+    });
+  });
+
+  it('should run all of the plugins in a stack on an array:', function (done) {
+    var plugins = new Plugins();
+
+    plugins
+      .use(function (arr, next) {
+        arr.push('a')
+        next(null, arr);
+      })
+      .use(function (arr, next) {
+        arr.push('b')
+        next(null, arr);
+      })
+      .use(function (arr, next) {
+        arr.push('c')
+        next(null, arr);
+      });
+
+    plugins.run([], function (err, arr) {
+      arr.should.eql(['a', 'b', 'c']);
+      done();
+    });
+  });
+
+  it('should run the string through each plugin in the stack:', function (done) {
+    var plugins = new Plugins();
+
+    var foo = function(options) {
+      return function(str, next) {
+        var re = /[\r\n]/;
+        next(null, str.split(re).map(function (line, i) {
+          return '\naaa' + line + 'bbb';
+        }).join(''));
+      };
+    };
+
+    plugins
+      .use(foo({a: 'b'}))
+      .use(function (str, next) {
+        next(null, str + 'ccc');
+      })
+      .use(function (str, next) {
+        next(null, str + 'ddd');
+      });
+
+    plugins.run(fixture('LICENSE-MIT'), function (err, str) {
+      /bbbcccddd$/.test(str).should.equal(true);
+      done();
+    });
+  });
+
+  it('should run a stack of plugins passed directly to `.run()`:', function (done) {
+    var plugins = new Plugins();
+
+    var a = function(val, next) {
+      next(null, val + 'a');
+    };
+    var b = function(val, next) {
+      next(null, val + 'b');
+    };
+    var c = function(val, next) {
+      next(null, val + 'c');
+    };
+
+    plugins.run('alphabet-', [a, b, c], function (err, val) {
+      val.should.equal('alphabet-abc');
+      done();
+    });
+  });
+
+  it('should run a stack of plugins passed directly to `.run()`:', function (done) {
+    var plugins = new Plugins();
+
+    var a = function(val, next) {
+      next(null, val + 'a');
+    };
+    var b = function(val, next) {
+      next(null, val + 'b');
+    };
+    var c = function(val, next) {
+      next(null, val + 'c');
+    };
+
+    plugins.run('alphabet-', [a], function (err, val) {
+      val.should.equal('alphabet-a');
+    });
+    plugins.run('alphabet-', [b], function (err, val) {
+      val.should.equal('alphabet-b');
+    });
+    plugins.run('alphabet-', [c], function (err, val) {
+      val.should.equal('alphabet-c');
+      done();
+    });
+  });
+});
+
+
+describe('plugins.run() sync:', function () {
+  it('should run all of the plugins in a stack synchronously:', function () {
+    var plugins = new Plugins();
+
+    plugins
+      .use(function (str) {
+        return str + 'a';
+      })
+      .use(function (str) {
+        return str + 'b';
+      })
+      .use(function (str) {
+        return str + 'c';
+      });
+
+    plugins.run('alphabet-').should.equal('alphabet-abc');
+  });
 
   describe('when a string is passed to plugins.run():', function () {
-    it('should run the string through each plugin in the stack.', function () {
+    it('should run the string through each plugin in the stack:', function () {
       var plugins = new Plugins();
 
       var foo = function(options) {
@@ -47,63 +246,12 @@ describe('plugins.run():', function () {
       /bbbcccddd$/.test(str).should.equal(true);
     });
   });
-
-  describe('when a string and callback is passed to plugins.run():', function () {
-    it('should run the string through each plugin in the stack.', function (done) {
-      var plugins = new Plugins();
-
-      var foo = function(options) {
-        return function(str, next) {
-          var re = /[\r\n]/;
-          next(null, str.split(re).map(function (line, i) {
-            return '\naaa' + line + 'bbb';
-          }).join(''));
-        };
-      };
-
-      plugins
-        .use(foo({a: 'b'}))
-        .use(function (str, next) {
-          next(null, str + 'ccc');
-        })
-        .use(function (str, next) {
-          next(null, str + 'ddd');
-        });
-
-      plugins.run(fixture('LICENSE-MIT'), function (err, str) {
-        /bbbcccddd$/.test(str).should.equal(true);
-        done();
-      });
-    });
-  });
-
-
 });
 
-
-
-
-describe('when a plugin is passed:', function () {
-  it('should run the function and return the result.', function () {
-    var plugins = new Plugins();
-
-    var src = function (options) {
-      return function(filepath) {
-        return fixture(filepath);
-      }
-    };
-
-    plugins.use(src());
-    var str = plugins.run('LICENSE-MIT');
-
-    // Test the date in the license
-    new RegExp((new Date).getUTCFullYear()).test(str).should.be.true;
-  });
-});
 
 
 describe('when a plugin is passed with options:', function () {
-  it('should run the function and return the result.', function () {
+  it('should run the function and return the result:', function () {
     var plugins = new Plugins();
 
     var src = function (options) {
@@ -123,7 +271,7 @@ describe('when a plugin is passed with options:', function () {
 
 
 describe('when a plugin is passed a file path:', function () {
-  it('should read the file with the first plugin, then run the string through the rest of the stack.', function () {
+  it('should read the file with the first plugin, then run the string through the rest of the stack:', function () {
     var plugins = new Plugins();
 
     var src = function (filepath, options) {

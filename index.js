@@ -23,12 +23,15 @@ var chalk = require('chalk');
  */
 
 function Plugins() {
+  if (!(this instanceof Plugins)) {
+    return new Plugins()
+  }
   this.plugins = [];
 }
 
 
 /**
- * Add a plugin `fn` to the plugins.
+ * Add a plugin `fn` to the `plugins` stack.
  *
  * ```js
  * plugins
@@ -40,14 +43,14 @@ function Plugins() {
  * **Params:**
  *
  * @param {Function} `fn` Plugin function to add to the `plugins` stack.
- * @return {Plugins}  for chaining.
+ * @return {Object} `Plugins` to enable chaining.
  * @api public
  */
 
 Plugins.prototype.use = function (fn) {
   fn = arrayify(fn).filter(function(plugin) {
     if (typeof plugin !== 'function') {
-      throw new TypeError('plugin() exception', chalk.magenta(plugin));
+      throw new TypeError('plugin() expected a function, but got:', chalk.magenta(plugin));
     }
     return true;
   }.bind(this));
@@ -73,19 +76,26 @@ Plugins.prototype.run = function () {
   var len = args.length;
   var cb = args[len - 1];
 
+  var plugins = this.plugins;
+
+  if (Array.isArray(args[1])) {
+    plugins = args[1];
+    args.splice(1, 1);
+  }
+
   var self = this;
-  var i = 0, total = this.plugins.length;
+  var i = 0, total = plugins.length;
 
   function next(err, results) {
     if (err) {
-      err.message = chalk.red(err.message)
+      err.message = chalk.red(err.message);
       throw new Error('plugin() exception', err);
     }
 
     args[0] = results;
 
     if(i < total) {
-      this.plugins[i++].apply(self, args.concat(next.bind(this)));
+      plugins[i++].apply(self, args.concat(next.bind(this)));
     } else {
       cb.apply(null, arguments);
     }
@@ -94,13 +104,12 @@ Plugins.prototype.run = function () {
   // async handling
   if (typeof cb === 'function') {
     args.pop();
-    this.plugins[i++].apply(self, args.concat(next.bind(this)));
+    plugins[i++].apply(self, args.concat(next.bind(this)));
   } else {
-
     var results = args.shift();
-    for (; i < total; i++) {
+    for (i = 0; i < total; i++) {
       try {
-        results = this.plugins[i].apply(this, [results].concat(args));
+        results = plugins[i].apply(this, [results].concat(args));
       } catch (err) {
         err.message = console.log(chalk.red(err.message));
         throw new Error('plugin() exception', err);
