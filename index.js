@@ -26,7 +26,7 @@ function Plugins() {
   if (!(this instanceof Plugins)) {
     return new Plugins()
   }
-  this.plugins = [];
+  this.stack = [];
 }
 
 
@@ -48,14 +48,13 @@ function Plugins() {
  */
 
 Plugins.prototype.use = function (fn) {
-  fn = arrayify(fn).filter(function(plugin) {
+  arrayify(fn).forEach(function(plugin) {
     if (typeof plugin !== 'function') {
-      throw new TypeError('plugin() expected a function, but got:', chalk.magenta(plugin));
+      var msg = 'plugin.use() expected a function:' + plugin;
+      throw new TypeError(chalk.bold(msg));
     }
-    return true;
+    this.stack.push(plugin);
   }.bind(this));
-
-  this.plugins = this.plugins.concat(fn);
   return this;
 };
 
@@ -76,26 +75,26 @@ Plugins.prototype.run = function () {
   var len = args.length;
   var cb = args[len - 1];
 
-  var plugins = this.plugins;
+  var stack = this.stack;
 
   if (Array.isArray(args[1])) {
-    plugins = args[1];
+    stack = args[1];
     args.splice(1, 1);
   }
 
   var self = this;
-  var i = 0, total = plugins.length;
+  var i = 0, total = stack.length;
 
   function next(err, results) {
     if (err) {
-      err.message = chalk.red(err.message);
-      throw new Error('plugin() exception', err);
+      err.message = console.log(chalk.bold(err.message));
+      throw new Error('plugin.run():', err);
     }
 
     args[0] = results;
 
     if(i < total) {
-      plugins[i++].apply(self, args.concat(next.bind(this)));
+      stack[i++].apply(self, args.concat(next.bind(this)));
     } else {
       cb.apply(null, arguments);
     }
@@ -104,15 +103,15 @@ Plugins.prototype.run = function () {
   // async handling
   if (typeof cb === 'function') {
     args.pop();
-    plugins[i++].apply(self, args.concat(next.bind(this)));
+    stack[i++].apply(self, args.concat(next.bind(this)));
   } else {
     var results = args.shift();
     for (i = 0; i < total; i++) {
       try {
-        results = plugins[i].apply(this, [results].concat(args));
+        results = stack[i].apply(this, [results].concat(args));
       } catch (err) {
-        err.message = console.log(chalk.red(err.message));
-        throw new Error('plugin() exception', err);
+        err.message = console.log(chalk.bold(err.message));
+        throw new Error('plugin.run():', err);
       }
     }
     return results;

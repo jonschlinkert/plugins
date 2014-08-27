@@ -1,7 +1,7 @@
 {
   "name": "plugins",
   "description": "Run a string through a plugin stack.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "homepage": "https://github.com/jonschlinkert/plugins",
   "author": {
     "name": "Jon Schlinkert",
