@@ -8,7 +8,12 @@
 'use strict';
 
 var arrayify = require('arrayify-compact');
+var es = require('event-stream');
 var chalk = require('chalk');
+
+function isStream (obj) {
+  return typeof obj === 'object' && obj.on && typeof obj.on === 'function';
+}
 
 
 /**
@@ -49,7 +54,7 @@ function Plugins() {
 
 Plugins.prototype.use = function (fn) {
   arrayify(fn).forEach(function(plugin) {
-    if (typeof plugin !== 'function') {
+    if (typeof plugin !== 'function' && !isStream(plugin)) {
       var msg = 'plugin.use() expected a function:' + plugin;
       throw new TypeError(chalk.bold(msg));
     }
@@ -87,7 +92,7 @@ Plugins.prototype.run = function () {
 
   function next(err, results) {
     if (err) {
-      err.message = console.log(chalk.bold(err.message));
+      err.message = chalk.bold(err.message);
       throw new Error('plugin.run():', err);
     }
 
@@ -110,12 +115,60 @@ Plugins.prototype.run = function () {
       try {
         results = stack[i].apply(this, [results].concat(args));
       } catch (err) {
-        err.message = console.log(chalk.bold(err.message));
+        err.message = chalk.bold(err.message);
         throw new Error('plugin.run():', err);
       }
     }
     return results;
   }
+};
+
+
+/**
+ * Add each plugin to a pipeline to be used with streams.
+ * Plugins must either be a stream or a function that returns a stream.
+ *
+ * ```js
+ * var pipeline = plugins.pipeline( arguments )
+ * ```
+ *
+ * @param {Array|Object|String} `arguments` The value to iterate over.
+ * @api public
+ */
+
+Plugins.prototype.pipeline = function() {
+  var args = [].slice.call(arguments);
+  var len = args.length;
+
+  var stack = this.stack;
+
+  if (Array.isArray(args[0])) {
+    stack = args[0];
+    args.splice(0, 1);
+  }
+
+  var pipeline = [];
+  var i = 0;
+  var len = stack.length;
+  for (i = 0; i < len; i++) {
+
+    // when the plugin is a stream, add it to the pipeline
+    if (isStream(stack[i])) {
+      pipeline.push(stack[i]);
+    } else {
+      // otherwise, call the function and pass in the args
+      // expect a stream to be returned to push onto the pipeline
+      try {
+        pipeline.push(stack[i].apply(this, args));
+      } catch (err) {
+        err.message = chalk.bold(err.message);
+        throw new Error('plugin.pipeline():', err);
+      }
+    }
+
+  }
+
+  return es.pipe.apply(es, pipeline);
 };
 
 

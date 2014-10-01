@@ -5,10 +5,10 @@
  * Licensed under the MIT License
  */
 
+var es = require('event-stream');
 var file = require('fs-utils');
 var should = require('should');
 var Plugins = require('..');
-
 
 function fixture(filename) {
   return file.readFileSync('test/fixtures/' + filename);
@@ -248,6 +248,70 @@ describe('plugins.run() sync:', function () {
   });
 });
 
+describe('plugins.pipeline():', function () {
+  it('should run a stack of streams:', function (done) {
+    var plugins = new Plugins();
+    plugins
+      .use(es.through(function (str) {
+        this.emit('data', str + 'a');
+      }))
+      .use(es.through(function (str) {
+        this.emit('data', str + 'b');
+      }))
+      .use(es.through(function (str) {
+        this.emit('data', str + 'c');
+      }));
+
+    var input = es.through();
+    var output = es.through(function (str) {
+      str.should.equal('alphabet-abc');
+      this.emit('data', str);
+    }, function () {
+      this.emit('end');
+    });
+
+    output.on('end', done);
+    input.pipe(plugins.pipeline()).pipe(output);
+
+    input.write('alphabet-');
+    input.end();
+  });
+
+  it('should run a stack of functions that return streams:', function (done) {
+    var plugins = new Plugins();
+    function append (suffix) {
+      return function (options) {
+        return es.through(function (str) {
+          this.emit('data', str + options.delims[0] + suffix + options.delims[1]);
+        });
+      };
+    }
+
+    plugins
+      .use(append('a'))
+      .use(append('b'))
+      .use(append('c'));
+
+    var input = es.through();
+    var output = es.through(function (str) {
+      str.should.equal('alphabet- [a] [b] [c]');
+      this.emit('data', str);
+    }, function () {
+      this.emit('end');
+    });
+
+    output.on('end', done);
+
+    var options = {
+      delims: [' [', ']']
+    };
+    input.pipe(plugins.pipeline(options)).pipe(output);
+
+    input.write('alphabet-');
+    input.end();
+  });
+});
+
 
 
 describe('when a plugin is passed with options:', function () {
@@ -302,3 +366,4 @@ describe('when a plugin is passed a file path:', function () {
     file.delete('test/actual/footer.md');
   });
 });
+
