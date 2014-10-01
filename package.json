@@ -43,7 +43,7 @@
     "mocha": "*",
     "should": "^4.0.4",
     "verb": "~0.2.6",
-    "verb-tag-jscomments": "^0.2.0"
+    "verb-tag-jscomments": "^0.2.2"
   },
   "dependencies": {
     "arrayify-compact": "^0.1.0",
