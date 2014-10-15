@@ -7,13 +7,8 @@
 
 'use strict';
 
-var arrayify = require('arrayify-compact');
 var es = require('event-stream');
 var chalk = require('chalk');
-
-function isStream (obj) {
-  return typeof obj === 'object' && obj.on && typeof obj.on === 'function';
-}
 
 
 /**
@@ -27,13 +22,12 @@ function isStream (obj) {
  * @api public
  */
 
-function Plugins() {
+function Plugins(name) {
   if (!(this instanceof Plugins)) {
     return new Plugins()
   }
   this.stack = [];
 }
-
 
 /**
  * Add a plugin `fn` to the `plugins` stack.
@@ -44,8 +38,6 @@ function Plugins() {
  *   .use(bar({}))
  *   .use(baz({}))
  * ```
- *
- * **Params:**
  *
  * @param {Function} `fn` Plugin function to add to the `plugins` stack.
  * @return {Object} `Plugins` to enable chaining.
@@ -63,19 +55,18 @@ Plugins.prototype.use = function (fn) {
   return this;
 };
 
-
 /**
- * Call each function in the `plugins` stack to iterate over `arguments`.
+ * Call each function in the `plugins` stack to iterate over `value`.
  *
  * ```js
- * plugins.run( arguments )
+ * plugins.run(value)
  * ```
  *
- * @param {Array|Object|String} `arguments` The value to iterate over.
+ * @param {Array|Object|String} `value` The value to iterate over.
  * @api public
  */
 
-Plugins.prototype.run = function () {
+Plugins.prototype.run = function (value) {
   var args = [].slice.call(arguments);
   var len = args.length;
   var cb = args[len - 1];
@@ -123,20 +114,19 @@ Plugins.prototype.run = function () {
   }
 };
 
-
 /**
  * Add each plugin to a pipeline to be used with streams.
  * Plugins must either be a stream or a function that returns a stream.
  *
  * ```js
- * var pipeline = plugins.pipeline( arguments )
+ * var pipeline = plugins.pipeline(value)
  * ```
  *
- * @param {Array|Object|String} `arguments` The value to iterate over.
+ * @param {Array|Object|String} `value` The value to iterate over.
  * @api public
  */
 
-Plugins.prototype.pipeline = function() {
+Plugins.prototype.pipeline = function(value) {
   var args = [].slice.call(arguments);
   var len = args.length;
 
@@ -170,6 +160,15 @@ Plugins.prototype.pipeline = function() {
 
   return es.pipe.apply(es, pipeline);
 };
+
+
+function isStream (obj) {
+  return typeof obj === 'object' && obj.on && typeof obj.on === 'function';
+}
+
+function arrayify (val) {
+  return Array.isArray(val) ? val : [val];
+}
 
 
 /**

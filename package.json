@@ -46,7 +46,6 @@
     "verb-tag-jscomments": "^0.2.2"
   },
   "dependencies": {
-    "arrayify-compact": "^0.1.0",
     "chalk": "^0.5.1",
     "event-stream": "^3.1.7"
   }
