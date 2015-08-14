@@ -23,8 +23,8 @@ var plugins = new Plugins();
 
 Add a plugin `fn` to the `plugins` stack.
 
-* `fn` **{Function}**: Plugin function to add to the `plugins` stack.    
-* `returns` **{Object}** `Plugins`: to enable chaining.  
+* `fn` **{Function}**: Plugin function to add to the `plugins` stack.
+* `returns` **{Object}** `Plugins`: to enable chaining.
 
 ```js
 plugins
@@ -37,7 +37,7 @@ plugins
 
 Call each function in the `plugins` stack to iterate over `value`.
 
-* `value` **{Array|Object|String}**: The value to iterate over.    
+* `value` **{Array|Object|String}**: The value to iterate over.
 
 ```js
 plugins.run(value)
@@ -47,7 +47,7 @@ plugins.run(value)
 
 Add each plugin to a pipeline to be used with streams. Plugins must either be a stream or a function that returns a stream.
 
-* `value` **{Array|Object|String}**: The value to iterate over.    
+* `value` **{Array|Object|String}**: The value to iterate over.
 
 ```js
 var pipeline = plugins.pipeline(value)
@@ -144,7 +144,7 @@ var a = function (str, next) {
   next(null, str + 'c');
 });
 
-plugins.run('alphabet-', [a, b, c] function (err, str) {
+plugins.run('alphabet-', [a, b, c], function (err, str) {
   console.log(str); //=> 'alphabet-abc'
 });
 ```
@@ -152,12 +152,12 @@ plugins.run('alphabet-', [a, b, c] function (err, str) {
 ## Author
 
 **Jon Schlinkert**
- 
+
 + [github/jonschlinkert](https://github.com/jonschlinkert)
-+ [twitter/jonschlinkert](http://twitter.com/jonschlinkert) 
++ [twitter/jonschlinkert](http://twitter.com/jonschlinkert)
 
 ## License
-Copyright (c) 2014 Jon Schlinkert, contributors.  
+Copyright (c) 2014 Jon Schlinkert, contributors.
 Released under the MIT license
 
 ***

@@ -8,7 +8,7 @@
 'use strict';
 
 var es = require('event-stream');
-var chalk = require('chalk');
+var bold = require('ansi-bold');
 
 
 /**
@@ -22,11 +22,11 @@ var chalk = require('chalk');
  * @api public
  */
 
-function Plugins(name) {
+function Plugins(options) {
   if (!(this instanceof Plugins)) {
-    return new Plugins()
+    return new Plugins(options);
   }
-  this.stack = [];
+  this.fns = [];
 }
 
 /**
@@ -45,13 +45,7 @@ function Plugins(name) {
  */
 
 Plugins.prototype.use = function (fn) {
-  arrayify(fn).forEach(function(plugin) {
-    if (typeof plugin !== 'function' && !isStream(plugin)) {
-      var msg = 'plugin.use() expected a function:' + plugin;
-      throw new TypeError(chalk.bold(msg));
-    }
-    this.stack.push(plugin);
-  }.bind(this));
+  this.fns.push(fn);
   return this;
 };
 
@@ -71,7 +65,7 @@ Plugins.prototype.run = function (value) {
   var len = args.length;
   var cb = args[len - 1];
 
-  var stack = this.stack;
+  var stack = this.fns;
 
   if (Array.isArray(args[1])) {
     stack = args[1];
@@ -82,15 +76,11 @@ Plugins.prototype.run = function (value) {
   var i = 0, total = stack.length;
 
   function next(err, results) {
-    if (err) {
-      err.message = chalk.bold(err.message);
-      throw new Error('plugin.run():', err);
-    }
-
+    if (err) return cb(err);
     args[0] = results;
 
     if(i < total) {
-      stack[i++].apply(self, args.concat(next.bind(this)));
+      stack[i++].apply(self, args.concat(next.bind(self)));
     } else {
       cb.apply(null, arguments);
     }
@@ -106,8 +96,7 @@ Plugins.prototype.run = function (value) {
       try {
         results = stack[i].apply(this, [results].concat(args));
       } catch (err) {
-        err.message = chalk.bold(err.message);
-        throw new Error('plugin.run():', err);
+        throw err;
       }
     }
     return results;
@@ -130,7 +119,7 @@ Plugins.prototype.pipeline = function(value) {
   var args = [].slice.call(arguments);
   var len = args.length;
 
-  var stack = this.stack;
+  var stack = this.fns;
 
   if (Array.isArray(args[0])) {
     stack = args[0];
@@ -151,13 +140,10 @@ Plugins.prototype.pipeline = function(value) {
       try {
         pipeline.push(stack[i].apply(this, args));
       } catch (err) {
-        err.message = chalk.bold(err.message);
-        throw new Error('plugin.pipeline():', err);
+        throw err;
       }
     }
-
   }
-
   return es.pipe.apply(es, pipeline);
 };
 

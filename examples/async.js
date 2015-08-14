@@ -2,16 +2,16 @@ var Plugins = require('..');
 var plugins = new Plugins();
 
 plugins
-  .use(function (str, next) {
-    next(null, str + 'a');
+  .use(function (val, next) {
+    next(null, val.concat('a'));
   })
-  .use(function (str, next) {
-    next(null, str + 'b');
+  .use(function (val, next) {
+    next(null, val.concat('b'));
   })
-  .use(function (str, next) {
-    next(null, str + 'c');
+  .use(function (val, next) {
+    next(null, val.concat('c'));
   });
 
-plugins.run('alphabet-', function (err, str) {
-  console.log(str); //=> 'alphabet-abc'
+plugins.run(['alphabet-'], function (err, res) {
+  console.log(res); //=> 'alphabet-abc'
 });

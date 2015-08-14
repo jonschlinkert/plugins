@@ -5,6 +5,7 @@
  * Licensed under the MIT License
  */
 
+/* deps: mocha */
 var es = require('event-stream');
 var file = require('fs-utils');
 var should = require('should');
@@ -357,13 +358,13 @@ describe('when a plugin is passed a file path:', function () {
     };
 
     plugins
-      .use(src('LICENSE-MIT', {prepend: 'banner'}), {local: 'options'})
+      .use(src('LICENSE', {prepend: 'banner'}), {local: 'options'})
       .use(append('footer.', {footer: 'opts'}), {a: 'b'})
       .use(dest('footer.md'));
 
     plugins.run({global: 'options'}, {c: 'd'}, {e: 'f'});
     file.exists('test/actual/footer.md').should.be.true;
-    file.delete('test/actual/footer.md');
+    file.del('test/actual/footer.md');
   });
 });
 
