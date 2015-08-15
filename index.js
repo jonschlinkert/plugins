@@ -8,8 +8,6 @@
 'use strict';
 
 var es = require('event-stream');
-var bold = require('ansi-bold');
-
 
 /**
  * Initialize `Plugins`
@@ -50,37 +48,42 @@ Plugins.prototype.use = function (fn) {
 };
 
 /**
- * Call each function in the `plugins` stack to iterate over `value`.
+ * Call each `fn` in the `plugins` stack
+ * to iterate over `val`.
  *
  * ```js
  * plugins.run(value)
  * ```
- *
- * @param {Array|Object|String} `value` The value to iterate over.
+ * @param {Array|Object|String} `val` The value to iterate over.
  * @api public
  */
 
-Plugins.prototype.run = function (value) {
+Plugins.prototype.run = function (val) {
   var args = [].slice.call(arguments);
   var len = args.length;
-  var cb = args[len - 1];
+  var fns = this.fns;
+  var cb;
 
-  var stack = this.fns;
+  if (typeof args[len - 1] === 'function') {
+    cb = args.pop();
+  }
 
+  // if the second arg is an array,
+  // assume it's a plugin array
   if (Array.isArray(args[1])) {
-    stack = args[1];
+    fns = args[1].concat(fns);
     args.splice(1, 1);
   }
 
   var self = this;
-  var i = 0, total = stack.length;
+  var i = 0, total = fns.length;
 
-  function next(err, results) {
+  function next(err, res) {
     if (err) return cb(err);
-    args[0] = results;
+    args[0] = res;
 
     if(i < total) {
-      stack[i++].apply(self, args.concat(next.bind(self)));
+      fns[i++].apply(self, args.concat(next.bind(self)));
     } else {
       cb.apply(null, arguments);
     }
@@ -88,18 +91,18 @@ Plugins.prototype.run = function (value) {
 
   // async handling
   if (typeof cb === 'function') {
-    args.pop();
-    stack[i++].apply(self, args.concat(next.bind(this)));
+    fns[i++].apply(self, args.concat(next.bind(this)));
   } else {
-    var results = args.shift();
-    for (i = 0; i < total; i++) {
+    var res = args.shift(), j = -1;
+
+    while (++j < total) {
       try {
-        results = stack[i].apply(this, [results].concat(args));
+        res = fns[j].apply(this, [res].concat(args));
       } catch (err) {
         throw err;
       }
     }
-    return results;
+    return res;
   }
 };
 
@@ -108,59 +111,52 @@ Plugins.prototype.run = function (value) {
  * Plugins must either be a stream or a function that returns a stream.
  *
  * ```js
- * var pipeline = plugins.pipeline(value)
+ * var pipeline = plugins.pipeline(val);
  * ```
- *
- * @param {Array|Object|String} `value` The value to iterate over.
+ * @param {Array|Object|String} `val` The value to iterate over.
  * @api public
  */
 
-Plugins.prototype.pipeline = function(value) {
+Plugins.prototype.pipeline = function(val) {
   var args = [].slice.call(arguments);
   var len = args.length;
 
-  var stack = this.fns;
+  var fns = this.fns;
 
   if (Array.isArray(args[0])) {
-    stack = args[0];
+    fns = args[0];
     args.splice(0, 1);
   }
 
+  var len = fns.length, i = -1;
   var pipeline = [];
-  var i = 0;
-  var len = stack.length;
-  for (i = 0; i < len; i++) {
+
+  while (++i < len) {
+    var fn = fns[i];
 
     // when the plugin is a stream, add it to the pipeline
-    if (isStream(stack[i])) {
-      pipeline.push(stack[i]);
-    } else {
-      // otherwise, call the function and pass in the args
-      // expect a stream to be returned to push onto the pipeline
-      try {
-        pipeline.push(stack[i].apply(this, args));
-      } catch (err) {
-        throw err;
-      }
+    if (isStream(fn)) {
+      pipeline.push(fn);
+      continue;
+    }
+
+    // otherwise, call the function and pass in the args
+    // expect a stream to be returned to push onto the pipeline
+    try {
+      pipeline.push(fn.apply(this, args));
+    } catch (err) {
+      throw err;
     }
   }
   return es.pipe.apply(es, pipeline);
 };
 
-
 function isStream (obj) {
   return typeof obj === 'object' && obj.on && typeof obj.on === 'function';
 }
 
-function arrayify (val) {
-  return Array.isArray(val) ? val : [val];
-}
-
-
 /**
- * Export `Plugins`
- *
- * @type {Object}
+ * Expose `Plugins`
  */
 
 module.exports = Plugins;
