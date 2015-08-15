@@ -1,16 +1,23 @@
 var util = require('util');
 var Plugins = require('..');
-var plugins = new Plugins();
 
 /**
  * Create your app and inherit `Plugins`
  */
 
 function App() {
-  Plugins.call(this);
+  this.plugins = new Plugins();
   this.tasks = {};
 }
 util.inherits(App, Plugins);
+
+App.prototype.use = function() {
+  return this.plugins.use.apply(this.plugins, arguments);
+};
+
+App.prototype.run = function() {
+  return this.plugins.run.apply(this.plugins, arguments);
+};
 
 /**
  * Useage
@@ -30,4 +37,3 @@ app.use(function (str) {
 
 console.log(app.run('alphabet-'));
 //=> 'alphabet-abc'
-console.log(app)

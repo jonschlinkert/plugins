@@ -19,7 +19,6 @@ function actual(filename, content) {
   return file.writeFileSync('test/actual/' + filename, content);
 }
 
-
 describe('plugins:', function () {
   it('should run a plugin and return the result:', function () {
     var plugins = new Plugins();
@@ -59,7 +58,7 @@ describe('plugins:', function () {
       return val + 'c';
     };
 
-    plugins.run('alphabet-', [a, b, c]).should.equal('alphabet-abc')
+    plugins.run('alphabet-', [a, b, c]).should.equal('alphabet-abc');
   });
 });
 
@@ -112,16 +111,13 @@ describe('plugins.run() async:', function () {
 
     plugins
       .use(function (arr, next) {
-        arr.push('a')
-        next(null, arr);
+        next(null, arr.concat('a'));
       })
       .use(function (arr, next) {
-        arr.push('b')
-        next(null, arr);
+        next(null, arr.concat('b'));
       })
       .use(function (arr, next) {
-        arr.push('c')
-        next(null, arr);
+        next(null, arr.concat('c'));
       });
 
     plugins.run([], function (err, arr) {
@@ -303,11 +299,9 @@ describe('plugins.pipeline():', function () {
 
     output.on('end', done);
 
-    var options = {
-      delims: [' [', ']']
-    };
-    input.pipe(plugins.pipeline(options)).pipe(output);
+    var options = {delims: [' [', ']']};
 
+    input.pipe(plugins.pipeline(options)).pipe(output);
     input.write('alphabet-');
     input.end();
   });
