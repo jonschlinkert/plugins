@@ -1,7 +1,7 @@
 {
   "name": "plugins",
   "description": "Run a string through a plugin stack.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "homepage": "https://github.com/jonschlinkert/plugins",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "jonschlinkert/plugins",
@@ -36,6 +36,12 @@
     "should": "^7.0.4"
   },
   "dependencies": {
+    "async-array-reduce": "^0.1.0",
     "event-stream": "^3.3.1"
+  },
+  "verb": {
+    "related": {
+      "list": "async-array-reduce"
+    }
   }
 }
