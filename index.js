@@ -7,7 +7,7 @@
 
 'use strict';
 
-var es = require('event-stream');
+var iterators = require('./iterators');
 
 /**
  * Initialize `Plugins`
@@ -24,17 +24,29 @@ function Plugins(options) {
   if (!(this instanceof Plugins)) {
     return new Plugins(options);
   }
+  this.iterators = {};
   this.fns = [];
+  this.init();
 }
+
+/**
+ * Register default iterators
+ */
+
+Plugins.prototype.init = function() {
+  this.iterator('async', iterators.async.bind(this));
+  this.iterator('stream', iterators.stream.bind(this));
+  this.iterator('sync', iterators.sync.bind(this));
+};
 
 /**
  * Add a plugin `fn` to the `plugins` stack.
  *
  * ```js
  * plugins
- *   .use(foo({}))
- *   .use(bar({}))
- *   .use(baz({}))
+ *   .use(foo)
+ *   .use(bar)
+ *   .use(baz)
  * ```
  *
  * @param {Function} `fn` Plugin function to add to the `plugins` stack.
@@ -58,52 +70,23 @@ Plugins.prototype.use = function (fn) {
  * @api public
  */
 
-Plugins.prototype.run = function (val) {
-  var args = [].slice.call(arguments);
-  var len = args.length;
-  var fns = this.fns;
-  var cb;
+Plugins.prototype.run = function () {
+  var last = arguments[arguments.length - 1];
+  var type = isFunction(last) ? 'async' : 'sync';
+  return this.iterators[type].apply(this, arguments);
+};
 
-  if (typeof args[len - 1] === 'function') {
-    cb = args.pop();
-  }
+/**
+ * Register an iterator `fn` by its `type`.
+ *
+ * @param {String} `type` The iterator type.
+ * @param {Function} `fn` Iterator function
+ * @api public
+ */
 
-  // if the second arg is an array,
-  // assume it's a plugin array
-  if (Array.isArray(args[1])) {
-    fns = args[1].concat(fns);
-    args.splice(1, 1);
-  }
-
-  var self = this;
-  var i = 0, total = fns.length;
-
-  function next(err, res) {
-    if (err) return cb(err);
-    args[0] = res;
-
-    if(i < total) {
-      fns[i++].apply(self, args.concat(next.bind(self)));
-    } else {
-      cb.apply(null, arguments);
-    }
-  }
-
-  // async handling
-  if (typeof cb === 'function') {
-    fns[i++].apply(self, args.concat(next.bind(this)));
-  } else {
-    var res = args.shift(), j = -1;
-
-    while (++j < total) {
-      try {
-        res = fns[j].apply(this, [res].concat(args));
-      } catch (err) {
-        throw err;
-      }
-    }
-    return res;
-  }
+Plugins.prototype.iterator = function(type, fn) {
+  this.iterators[type] = fn;
+  return this;
 };
 
 /**
@@ -111,48 +94,22 @@ Plugins.prototype.run = function (val) {
  * Plugins must either be a stream or a function that returns a stream.
  *
  * ```js
- * var pipeline = plugins.pipeline(val);
+ * var pipeline = plugins.pipeline(plugin());
  * ```
  * @param {Array|Object|String} `val` The value to iterate over.
  * @api public
  */
 
-Plugins.prototype.pipeline = function(val) {
-  var args = [].slice.call(arguments);
-  var len = args.length;
-
-  var fns = this.fns;
-
-  if (Array.isArray(args[0])) {
-    fns = args[0];
-    args.splice(0, 1);
-  }
-
-  var len = fns.length, i = -1;
-  var pipeline = [];
-
-  while (++i < len) {
-    var fn = fns[i];
-
-    // when the plugin is a stream, add it to the pipeline
-    if (isStream(fn)) {
-      pipeline.push(fn);
-      continue;
-    }
-
-    // otherwise, call the function and pass in the args
-    // expect a stream to be returned to push onto the pipeline
-    try {
-      pipeline.push(fn.apply(this, args));
-    } catch (err) {
-      throw err;
-    }
-  }
-  return es.pipe.apply(es, pipeline);
+Plugins.prototype.pipeline = function() {
+  return this.iterators.stream.apply(this, arguments);
 };
 
-function isStream (obj) {
-  return typeof obj === 'object' && obj.on && typeof obj.on === 'function';
+/**
+ * Utilities
+ */
+
+function isFunction(val) {
+  return typeof val === 'function';
 }
 
 /**
