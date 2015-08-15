@@ -1,7 +1,7 @@
 {
   "name": "plugins",
-  "description": "Run a string through a plugin stack.",
-  "version": "0.4.0",
+  "description": "Run a value through a plugin stack.",
+  "version": "0.4.2",
   "homepage": "https://github.com/jonschlinkert/plugins",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "jonschlinkert/plugins",
@@ -10,7 +10,8 @@
   },
   "license": "MIT",
   "files": [
-    "index.js"
+    "index.js",
+    "iterators.js"
   ],
   "main": "index.js",
   "engines": {
@@ -19,17 +20,6 @@
   "scripts": {
     "test": "mocha"
   },
-  "keywords": [
-    "extension",
-    "extensions",
-    "helper",
-    "helpers",
-    "middleware",
-    "plugin",
-    "fn",
-    "fns",
-    "plugins"
-  ],
   "devDependencies": {
     "fs-utils": "^0.6.0",
     "mocha": "^2.2.5",
@@ -39,6 +29,18 @@
     "async-array-reduce": "^0.1.0",
     "event-stream": "^3.3.1"
   },
+  "keywords": [
+    "extension",
+    "extensions",
+    "helper",
+    "helpers",
+    "middleware",
+    "use",
+    "plugin",
+    "fn",
+    "fns",
+    "plugins"
+  ],
   "verb": {
     "related": {
       "list": "async-array-reduce"

@@ -1,6 +1,6 @@
 # plugins [![NPM version](https://badge.fury.io/js/plugins.svg)](http://badge.fury.io/js/plugins)
 
-> Run a string through a plugin stack.
+> Run a value through a plugin stack.
 
 ## Install
 
